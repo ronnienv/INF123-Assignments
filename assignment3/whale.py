@@ -16,7 +16,7 @@ from pygame.locals import KEYDOWN, QUIT, K_ESCAPE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 ############################################################
 
-def process_input(prev_direction):
+def process_input(prev_direction, paused, paused_dir):
     game_status, direction = 1, prev_direction
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -25,23 +25,32 @@ def process_input(prev_direction):
             key = event.key
             if key == K_ESCAPE:
                 game_status = 0
-            elif key == K_UP:
-                direction = (0, -1)
-            elif key == K_DOWN:
-                direction = (0, 1)
-            elif key == K_LEFT:
-                direction = (-1, 0)
-            elif key == K_RIGHT:
-                direction = (1, 0)
-    return game_status, direction
+            elif paused:
+                if key == pygame.K_SPACE: 
+                    direction = paused_dir
+                    paused = False
+                else:
+                    direction = (0, 0)
+            elif key == pygame.K_w:
+                direction = (0, -2)
+            elif key == pygame.K_s:
+                direction = (0, 2)
+            elif key == pygame.K_a:
+                direction = (-2, 0)
+            elif key == pygame.K_d:
+                direction = (2, 0)
+            elif key == pygame.K_SPACE and paused == False: 
+                direction = (0, 0)
+                paused = True
+    return game_status, direction, paused
 
 ############################################################
 
 def draw_everything(screen, mybox, pellets, borders):
-    screen.fill((0, 0, 64))  # dark blue
-    [pygame.draw.rect(screen, (0, 191, 255), b) for b in borders]  # # Deep Sky Blue
-    [pygame.draw.rect(screen, (255, 192, 203), p) for p in pellets]  # pink
-    pygame.draw.rect(screen, (0, 191, 255), mybox)  # Deep Sky Blue
+    screen.fill((255, 255, 255))  # white
+    [pygame.draw.rect(screen, (0, 0, 0), b) for b in borders]  # black
+    [pygame.draw.rect(screen, (100, 192, 40), p) for p in pellets]  # puke-green
+    pygame.draw.rect(screen, (200, 0, 0), mybox)  # red
     pygame.display.update()
 
 ############################################################
@@ -70,7 +79,9 @@ def create_borders(dims, thickness=2):
     return [pygame.Rect(0, 0, thickness, h),
             pygame.Rect(0, 0, w, thickness),
             pygame.Rect(w - thickness, 0, thickness, h),
-            pygame.Rect(0, h - thickness, w, thickness)]
+            pygame.Rect(0, h - thickness, w, thickness),
+            pygame.Rect(220, 180, 60, thickness),
+            pygame.Rect(150, 100, thickness, 90)]
     
 ############################################################
 
@@ -106,9 +117,14 @@ mybox, direction = create_box(dims)
 
 # game loop
 game_status = 1  # 0 for game over, 1 for play
+paused = False
+paused_dir = direction
 while game_status:
 
-    game_status, direction = process_input(direction)
+    if paused == False:
+        paused_dir = direction
+
+    game_status, direction, paused = process_input(direction, paused, paused_dir)
     
     mybox = move(mybox, direction)
     if collide(mybox, borders):
