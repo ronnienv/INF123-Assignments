@@ -2,7 +2,6 @@ from network import Handler, poll
 import sys
 from threading import Thread
 from time import sleep
-import msvcrt
 
 
 myname = raw_input('What is your name? ')
@@ -15,14 +14,14 @@ class Client(Handler):
         self.do_send({'user': myname, 'txt': 'quit'})
         print "**** Disconnected From Server ****"
         running = 0
-        raise SystemExit
-
+        raise SystemExit 
     
     def on_msg(self, msg):
     	if msg != "close":
         	print msg
-        else:
-        	self.do_close()
+        else: 
+            exit()
+            self.do_close()
         	
         
 host, port = 'localhost', 8888
@@ -40,9 +39,14 @@ thread.daemon = True  # die when the main thread dies
 thread.start()
 
 while running:
-	
-	mytxt = sys.stdin.readline()
-	if mytxt == "quit":
-		client.on_close()
-	else:
-		client.do_send({'speak': myname, 'txt': mytxt})
+    try:
+        mytxt = sys.stdin.readline().rstrip()
+        if mytxt == "quit":
+            client.do_close()
+
+        else:
+    		client.do_send({'speak': myname, 'txt': mytxt})
+
+    except KeyboardInterrupt:
+        client.do_close()
+        exit()

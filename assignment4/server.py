@@ -1,5 +1,4 @@
 from network import Listener, Handler, poll
-import msvcrt
  
 handlers = {}  # map client handler to user name
 users_joined = ""
