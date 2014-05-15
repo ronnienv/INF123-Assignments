@@ -3,6 +3,7 @@ from time import sleep
 from network import Handler, poll
 from pygame import Rect, init as init_pygame
 from pygame.event import get as get_pygame_events
+from pygame.draw import rect as draw_rect
 from pygame.locals import KEYDOWN, QUIT, K_ESCAPE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from pygame.time import Clock
 
@@ -38,6 +39,7 @@ class Model():
         self.mybox = [200, 150, 10, 10]  # start in middle of the screen
         self.got_pellet = False
         self.connected = False
+        self.players = {}
         
     def do_cmd(self, cmd):
         if cmd == 'quit':
@@ -120,7 +122,9 @@ class Client(Handler):
         model.mybox = model.players[model.myname]
 
         if type(pellets[0]) == type(model.pellets[0]) and model.pellets != pellets:
-            model.got_pellet = True
+            for pellet in model.pellets:
+                if collide_boxes(pellet, model.mybox):
+                    model.got_pellet = True
 
         model.pellets = pellets
 
@@ -148,6 +152,7 @@ class NetworkController():
         msg = {'input': cmd}
         self.client.do_send(msg)
 
+        # removes jittery movement
         clock.tick(30)
 
 ################### CONSOLE VIEW #############################
@@ -208,7 +213,36 @@ class PygameView():
         b = self.m.mybox
         myrect = pygame.Rect(b[0], b[1], b[2], b[3])
         screen.fill((0, 0, 64))  # dark blue
-        pygame.draw.rect(screen, (0, 191, 255), myrect)  # Deep Sky Blue
+        [draw_rect(screen, (0, 191, 255), b) for b in borders]  # deep sky blue 
+        [pygame.draw.rect(screen, (255, 192, 203), p) for p in pellets]  # pink
+        [pygame.draw.rect(screen, (0, 191, 255), b) for b in borders]  # red
+        pygame.display.update()
+
+################### CLIENT SERVER PYGAME VIEW #############################
+
+class ClientServerPygameView():
+    
+    def __init__(self, m):
+        self.m = m
+        pygame.init()
+        self.screen = pygame.display.set_mode((400, 300))
+        
+    def display(self):
+        pygame.event.pump()
+        screen = self.screen
+        borders = [pygame.Rect(b[0], b[1], b[2], b[3]) for b in self.m.borders]
+        pellets = [pygame.Rect(p[0], p[1], p[2], p[3]) for p in self.m.pellets]
+        b = self.m.mybox
+        myrect = pygame.Rect(b[0], b[1], b[2], b[3])
+        screen.fill((0, 0, 64))  # dark blue
+
+        for player in self.m.players.items():
+            name = player[0]
+            if name != self.m.myname:
+                draw_rect(screen, (255, 0, 0), player[1])  # red
+            else:
+                draw_rect(screen, (0, 191, 255), player[1])  # deep sky blue
+
         [pygame.draw.rect(screen, (255, 192, 203), p) for p in pellets]  # pink
         [pygame.draw.rect(screen, (0, 191, 255), b) for b in borders]  # red
         pygame.display.update()
@@ -220,12 +254,15 @@ model = Model()
 # c = SmartBotController(model)
 c = NetworkController(model)
 # v = ConsoleView(model)
-v2 = PygameView(model)
+# v2 = PygameView(model)
 v3 = ConsoleBotView(model)
+# v4 = ClientServerPygameView(model)
+
 while not model.game_over:
     sleep(0.02)
     c.poll()
     model.update()
     # v.display()
-    v2.display()
+    # v2.display()
     v3.display()
+    # v4.display()
