@@ -33,8 +33,10 @@ class MyHandler(Handler):
             name, txt = msg['speak'], msg['txt']
             wordlist = msg['txt'].split(" ")
             broadcastlist = []
+            removelist = []
 
             for word in wordlist:
+                
                 #### subscribe ####
                 if word[0] == '+':
                     topic = word[1:]
@@ -43,8 +45,8 @@ class MyHandler(Handler):
                     else: 
                         subs[topic] = []
                         subs[topic].append(name)
-                    #remove subscriptions so they become private
-                    wordlist.remove(word)
+                    #adds word to list of words to be removed
+                    removelist.append(word)
 
                 ### publish ###
                 elif word[0] == "#":
@@ -60,10 +62,13 @@ class MyHandler(Handler):
                 ### unsubscribe ###
                 elif word[0] == "-":
                     topic = word[1:]
-                    subscribers = subs[topic]
-                    if name in subscribers:
-                        subscribers.remove(name)
-                    wordlist.remove(word)
+                    if topic in subs:
+                        subscribers = subs[topic]
+
+                        if name in subscribers:
+                            subscribers.remove(name)
+
+                    removelist.append(word)
 
                 ### private message ###
                 elif word[0] == "@":
@@ -72,6 +77,9 @@ class MyHandler(Handler):
                     if recipient in names:
                         if recipient not in broadcastlist:
                             broadcastlist.append(recipient)
+
+            for word in removelist:
+                wordlist.remove(word)
 
             txt = " ".join(wordlist)
 
